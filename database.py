@@ -1,11 +1,10 @@
 import sqlite3
 
-def get_connnection():
+def get_connection():
     return sqlite3.connect("github_data.db")
 
-
 def create_tables():
-    conn = get_connnection()
+    conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -14,49 +13,64 @@ def create_tables():
         author TEXT,
         message TEXT,
         date TEXT
-    )                          
+    )
     """)
-
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS pull_requests (
         id INTEGER PRIMARY KEY,
         title TEXT,
+        body TEXT,
         state TEXT,
         author TEXT,
-        created_at TEXT
+        created_at TEXT,
+        merged_at TEXT
     )
     """)
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS comments (
         id INTEGER PRIMARY KEY,
-        user TEXT,
+        pr_number INTEGER,
+        author TEXT,
         body TEXT,
         created_at TEXT
     )
     """)
-    
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS issues (
+        id INTEGER PRIMARY KEY,
+        title TEXT,
+        body TEXT,
+        state TEXT,
+        author TEXT,
+        created_at TEXT
+    )
+    """)
+
     conn.commit()
     conn.close()
+    print("Tables created.")
 
-def save_data(prs,commits):
-    conn = get_connnection()
+def save_data(prs, commits, comments, issues):
+    conn = get_connection()
     cursor = conn.cursor()
 
     for pr in prs:
         cursor.execute("""
         INSERT OR REPLACE INTO pull_requests
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (
             pr["number"],
             pr["title"],
+            pr.get("body") or "",
             pr["state"],
             pr["user"]["login"],
-            pr["created_at"]
+            pr["created_at"],
+            pr.get("merged_at")
         ))
-        
-        
+
     for commit in commits:
         cursor.execute("""
         INSERT OR REPLACE INTO commits
@@ -68,6 +82,31 @@ def save_data(prs,commits):
             commit["commit"]["author"]["date"]
         ))
 
+    for comment in comments:
+        cursor.execute("""
+        INSERT OR REPLACE INTO comments
+        VALUES (?, ?, ?, ?, ?)
+        """, (
+            comment["id"],
+            comment.get("pr_number"),
+            comment["user"]["login"],
+            comment["body"],
+            comment["created_at"]
+        ))
+
+    for issue in issues:
+        cursor.execute("""
+        INSERT OR REPLACE INTO issues
+        VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            issue["number"],
+            issue["title"],
+            issue.get("body") or "",
+            issue["state"],
+            issue["user"]["login"],
+            issue["created_at"]
+        ))
+
     conn.commit()
     conn.close()
-
+    print("Data saved.")
