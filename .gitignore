@@ -1,2 +1,4 @@
 .env
 github_data.db
+.venv
+__pycache__
