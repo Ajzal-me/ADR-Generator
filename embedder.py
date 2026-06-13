@@ -36,7 +36,7 @@ def load_issues(repo):
     conn.close()
     return rows
 
-def embed_text(text,max_chars=8000):
+def embed_text(text,max_chars=2000):
     text = text[:max_chars]
     response = ollama.embeddings(
         model="nomic-embed-text",
