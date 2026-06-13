@@ -3,15 +3,20 @@ from urllib.parse import urlparse
 from dotenv import load_dotenv
 import os
 from database import create_tables, save_data
+from config import REPO_URL
 
 load_dotenv()
 token = os.getenv('TOKEN')
-url = "https://github.com/pallets/flask"
+parts = urlparse(REPO_URL).path.strip("/").split("/")
+owner, repo = parts[0], parts[1]
+full_repo = f"{owner}/{repo}"
 
-def paginate(url, headers):
+def paginate(url, headers,max_pages=3):
     results = []
     page = 1
     while True:
+        if page>max_pages:
+            break
         response = requests.get(
             url,
             headers=headers,
@@ -26,9 +31,7 @@ def paginate(url, headers):
         page += 1
     return results
 
-def load_data(repo_url, token):
-    parts = urlparse(repo_url).path.strip("/").split("/")
-    owner, repo = parts[0], parts[1]
+def load_data(token):
 
     headers = {}
     if token:
@@ -52,14 +55,14 @@ def load_data(repo_url, token):
 
     print("Fetching PR comments...")
     pr_comments = []
-    for pr in prs:
-        comments = paginate(
-            f"https://api.github.com/repos/{owner}/{repo}/issues/{pr['number']}/comments",
-            headers
-        )
-        for comment in comments:
-            comment["pr_number"] = pr["number"]
-        pr_comments.extend(comments)
+    # for pr in prs:
+    #     comments = paginate(
+    #         f"https://api.github.com/repos/{owner}/{repo}/issues/{pr['number']}/comments",
+    #         headers
+    #     )
+    #     for comment in comments:
+    #         comment["pr_number"] = pr["number"]
+    #     pr_comments.extend(comments)
     print(f"  Found {len(pr_comments)} comments")
 
     print("Fetching issues...")
@@ -78,9 +81,10 @@ def load_data(repo_url, token):
     }
 
 if __name__ == "__main__":
-    data = load_data(url, token)
+    data = load_data(token)
     create_tables()
     save_data(
+        full_repo,
         data["pull_requests"],
         data["commits"],
         data["comments"],
