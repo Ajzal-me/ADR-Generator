@@ -2,11 +2,6 @@ import chromadb
 import ollama
 from state import ADRState
 from config import REPO_URL
-from urllib.parse import urlparse
-
-def get_repo():
-    owner,repo = urlparse(REPO_URL).path.strip("/").split("/")
-    return f"{owner}/{repo}"
 
 def search(query, collection, n_results=15):
     query_embeddings = ollama.embeddings(
