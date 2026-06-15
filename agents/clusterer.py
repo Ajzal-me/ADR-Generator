@@ -35,7 +35,7 @@ def clusterer(state:ADRState)->ADRState:
     vectors = []
     for pr in relevant_prs:
         embeddings = ollama.embeddings(
-            model="nomic-embed-text"  
+            model="nomic-embed-text", 
             prompt= pr['title']
         )["embedding"]
         vectors.append(embeddings)
@@ -55,7 +55,7 @@ def clusterer(state:ADRState)->ADRState:
             grouped[label] = []
         grouped[label].append(pr)
         
-    clusters = {}
+    clusters = []
     for label,prs in grouped.items():
         print(f"  Naming cluster {label} with {len(prs)} PRs...")
         
@@ -68,6 +68,6 @@ def clusterer(state:ADRState)->ADRState:
         
         print(f"  Cluster: '{theme}' — {len(prs)} PRs")
         
-        return {
-            "clusters": clusters
-        }   
+    return {
+        "clusters": clusters
+    }   

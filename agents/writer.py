@@ -1,5 +1,7 @@
 import os
 from state import ADRState
+import re
+
 
 def writer(state: ADRState) -> ADRState:
     draft_adrs = state["draft_adrs"]
@@ -16,6 +18,7 @@ def writer(state: ADRState) -> ADRState:
         
         # create clean filename — lowercase, spaces to dashes
         safe_name = theme.lower().replace(" ", "-")
+        safe_name = re.sub(r'[<>:"/\\|?*]', '', safe_name) 
         filename = f"adr_output/{i+1:03d}-{safe_name}.md"
         
         with open(filename, "w", encoding="utf-8") as f:

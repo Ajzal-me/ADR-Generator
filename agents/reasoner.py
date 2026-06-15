@@ -23,9 +23,10 @@ def reasoner(state: ADRState) -> ADRState:
         
     commit_text = ""
     for commit in relevant_commits:
-        commit_text+=f"Author: {commit['author']}\n"
-        commit_text+=f"Text: {commit['text']}\n\n"
-        
+        commit_text += f"Author: {commit['author']}\n"
+        commit_text += f"Date: {commit['date']}\n"
+        commit_text += f"Message: {commit['text']}\n\n"
+            
     response = ollama.chat(
         model="mistral",
         messages=[{
@@ -50,12 +51,16 @@ def reasoner(state: ADRState) -> ADRState:
         
     
     adr_text = f"# ADR: {theme}\n\n"
-    adr_text += response["message"]["content"]  # get content from response
-    
-    # get existing draft_adrs or empty list if first time
-    existing_adrs = state.get("draft_adrs", [])
-    
+    adr_text += response["message"]["content"]
+
+    # add sources
+    adr_text += "\n\n---\n## Sources\n"
+    for pr in prs:
+        adr_text += f"- **{pr['title']}** by {pr['author']} ({pr['created_at'][:10]})\n"
+
+    existing_adrs = state["draft_adrs"] or []
+
     return {
-        "draft_adrs": existing_adrs + [adr_text],          # add new ADR
-        "current_cluster_index": index + 1           # increment by?
+        "draft_adrs": existing_adrs + [adr_text],
+        "current_cluster_index": index + 1
     }
