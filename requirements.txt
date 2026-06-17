@@ -4,3 +4,4 @@ typing
 scikit-learn
 numpy
 urlib
+streamlit

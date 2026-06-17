@@ -37,10 +37,11 @@ graph.add_conditional_edges(
 graph.add_edge("writer",END)
 app=graph.compile()
 
-if __name__ == "__main__":
+def run_graph(repo, topic, n_results=15):
     result = app.invoke({
-        "repo": "encode/httpx",
-        "topic": "authentication",
+        "repo": repo,
+        "topic": topic,
+        "n_results": n_results,      # add this
         "relevant_prs": [],
         "relevant_commits": [],
         "clusters": [],
@@ -49,7 +50,4 @@ if __name__ == "__main__":
         "current_cluster_index": 0,
         "errors": []
     })
-    
-    print("\nDone! ADRs saved:")
-    for path in result["final_adrs"]:
-        print(f"  {path}")
+    return result

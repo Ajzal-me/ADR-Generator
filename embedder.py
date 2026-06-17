@@ -127,17 +127,12 @@ def embed_issues(collection, repo):
         )
     print(f"Embedded {len(issues)} issues")
 
-if __name__ == "__main__":
-    parts = urlparse(REPO_URL).path.strip("/").split("/")
-    repo = f"{parts[0]}/{parts[1]}"
-
+def run_embedder(repo):
     client = chromadb.PersistentClient(path="chroma_store")
-
     commits_col  = client.get_or_create_collection("commits")
     prs_col      = client.get_or_create_collection("pull_requests")
-    comments_col = client.get_or_create_collection("comments")
     issues_col   = client.get_or_create_collection("issues")
-
+    comments_col = client.get_or_create_collection("comments")
     embed_commits(commits_col, repo)
     embed_pull_requests(prs_col, repo)
     embed_comments(comments_col, repo)

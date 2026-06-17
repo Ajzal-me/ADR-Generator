@@ -3,13 +3,10 @@ from urllib.parse import urlparse
 from dotenv import load_dotenv
 import os
 from database import create_tables, save_data
-from config import REPO_URL
+
 
 load_dotenv()
 token = os.getenv('TOKEN')
-parts = urlparse(REPO_URL).path.strip("/").split("/")
-owner, repo = parts[0], parts[1]
-full_repo = f"{owner}/{repo}"
 
 def paginate(url, headers,max_pages=3):
     results = []
@@ -31,7 +28,11 @@ def paginate(url, headers,max_pages=3):
         page += 1
     return results
 
-def load_data(token):
+def load_data(url, token):
+    
+    parts = urlparse(url).path.strip("/").split("/")
+    owner, repo = parts[0], parts[1]
+    full_repo = f"{owner}/{repo}"
 
     headers = {}
     if token:
@@ -80,8 +81,10 @@ def load_data(token):
         "issues": real_issues
     }
 
+
+#to be fixed
 if __name__ == "__main__":
-    data = load_data(token)
+    data = load_data(url,token)
     create_tables()
     save_data(
         full_repo,
