@@ -1,7 +1,6 @@
 import chromadb
 from database import get_connection
 import ollama
-from config import REPO_URL
 from urllib.parse import urlparse
 
 def load_commits(repo):

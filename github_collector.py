@@ -102,21 +102,3 @@ def load_data(url, token):
 
 
 
-if __name__ == "__main__":
-    from config import REPO_URL
-    data = load_data(REPO_URL, token)
-    parts = urlparse(REPO_URL).path.strip("/").split("/")
-    full_repo = f"{parts[0]}/{parts[1]}"
-    create_tables()
-    save_data(
-        full_repo,
-        data["pull_requests"],
-        data["commits"],
-        data["comments"],
-        data["issues"]
-    )
-    print("\nDone.")
-    print(f"  Commits   : {len(data['commits'])}")
-    print(f"  PRs       : {len(data['pull_requests'])}")
-    print(f"  Comments  : {len(data['comments'])}")
-    print(f"  Issues    : {len(data['issues'])}")
