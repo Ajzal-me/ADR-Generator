@@ -14,6 +14,13 @@ The problem: most teams never write them. This tool generates them automatically
 
 ---
 
+## Demo
+
+![ADR](docs/ADR.png)
+![Chat](docs/Chat.png)
+
+
+
 ## How it works
 
 The system uses a four-agent pipeline orchestrated by LangGraph:
