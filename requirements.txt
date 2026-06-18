@@ -1,7 +1,8 @@
+requests
+python-dotenv
+chromadb
 ollama
 langgraph
-typing
 scikit-learn
 numpy
-urlib
 streamlit

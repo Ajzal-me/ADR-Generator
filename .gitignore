@@ -1,6 +1,7 @@
 .env
 github_data.db
-.venv
-__pycache__
-chroma_store
-adr_output
+chroma_store/
+adr_output/
+__pycache__/
+.venv/
+*.pyc
