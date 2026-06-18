@@ -120,6 +120,16 @@ ADR-Generator/
 
 ## Design decisions
 
+**Why multiple ADRs per topic?**
+Searching "authentication" doesn't mean one decision was made about authentication — it means 
+several decisions were made in that area at different times by different people. The clusterer 
+uses KMeans on embedding vectors to find how many distinct decision groups exist within the 
+relevant results. Each cluster becomes one ADR. The number of ADRs is determined by the data, 
+not hardcoded — a narrow topic like "auth token expiry" might produce one ADR, while a broad 
+topic like "authentication" produces three or four. This separation between retrieval (semantic 
+search) and grouping (KMeans) is intentional — the LLM is only used for naming clusters and 
+writing prose, never for deciding what belongs together.
+
 **Why fully local?**
 Sending proprietary codebases to external APIs is a compliance risk for many engineering teams. Running locally with Ollama means the system works in air-gapped environments where data privacy is a requirement — not just a preference.
 
