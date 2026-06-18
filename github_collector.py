@@ -3,12 +3,39 @@ from urllib.parse import urlparse
 from dotenv import load_dotenv
 import os
 from database import create_tables, save_data
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from config import MAX_PAGES
 
 
 load_dotenv()
 token = os.getenv('TOKEN')
 
-def paginate(url, headers,max_pages=3):
+def get_comments_for_pr(pr, owner, repo, headers):
+    comments = paginate(
+        f"https://api.github.com/repos/{owner}/{repo}/issues/{pr['number']}/comments",
+        headers
+    )
+    for comment in comments:
+        comment["pr_number"] = pr["number"]
+    return comments
+
+def get_all_pr_comments(prs, owner, repo, headers):
+    pr_comments = []
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = {
+            executor.submit(get_comments_for_pr, pr, owner, repo, headers): pr
+            for pr in prs
+        }
+        completed = 0
+        for future in as_completed(futures):
+            comments = future.result()
+            pr_comments.extend(comments)
+            completed += 1
+            print(f"  Comments fetched: {completed}/{len(prs)} PRs", end="\r")
+    print()
+    return pr_comments
+
+def paginate(url, headers,max_pages=MAX_PAGES):
     results = []
     page = 1
     while True:
@@ -55,15 +82,7 @@ def load_data(url, token):
     print(f"  Found {len(prs)} pull requests")
 
     print("Fetching PR comments...")
-    pr_comments = []
-    # for pr in prs:
-    #     comments = paginate(
-    #         f"https://api.github.com/repos/{owner}/{repo}/issues/{pr['number']}/comments",
-    #         headers
-    #     )
-    #     for comment in comments:
-    #         comment["pr_number"] = pr["number"]
-    #     pr_comments.extend(comments)
+    pr_comments = get_all_pr_comments(prs, owner, repo, headers)
     print(f"  Found {len(pr_comments)} comments")
 
     print("Fetching issues...")
@@ -82,9 +101,12 @@ def load_data(url, token):
     }
 
 
-#to be fixed
+
 if __name__ == "__main__":
-    data = load_data(url,token)
+    from config import REPO_URL
+    data = load_data(REPO_URL, token)
+    parts = urlparse(REPO_URL).path.strip("/").split("/")
+    full_repo = f"{parts[0]}/{parts[1]}"
     create_tables()
     save_data(
         full_repo,

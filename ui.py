@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 
 from github_collector import load_data
 from database import create_tables, save_data
-from embedder import embed_commits,embed_pull_requests,embed_issues,run_embedder
+from embedder import run_embedder
 from graph import app
 import chromadb
 from agents.collector import search
@@ -68,27 +68,17 @@ with st.sidebar:
                         gc.collect()
                         time.sleep(1)
                         
-                    if os.path.exists("chroma_store"):
-                        try:
-                            shutil.rmtree("chroma_store")
-                        except Exception:
-                            st.warning("Could not clear old ChromaDB — using existing data")   # now safe to delete
-                                        
-                    client = chromadb.PersistentClient(path="chroma_store")
-                    st.session_state.chroma_client = client   # store in session state
-                    
-                    client = chromadb.PersistentClient(path="chroma_store")
-                    commits_col = client.get_or_create_collection("commits")
-                    prs_col     = client.get_or_create_collection("pull_requests")
-                    issues_col  = client.get_or_create_collection("issues")
-                    
-                    embed_commits(commits_col, full_repo)
-                    embed_pull_requests(prs_col, full_repo)
-                    embed_issues(issues_col, full_repo)
+                        if os.path.exists("chroma_store"):
+                            try:
+                                shutil.rmtree("chroma_store")
+                            except Exception:
+                                st.warning("Could not clear old ChromaDB — using existing data")   # now safe to delete
+                                            
+                        run_embedder(full_repo)
                 
-                st.session_state.repo_ready = True
-                st.session_state.full_repo  = full_repo
-                st.success("✅ Ready — enter a topic below")
+                        st.session_state.repo_ready = True
+                        st.session_state.full_repo  = full_repo
+                        st.success("✅ Ready — enter a topic below")
                 
             except Exception as e:
                 st.error(f"Error: {str(e)}")

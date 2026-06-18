@@ -46,7 +46,6 @@ def embed_text(text,max_chars=2000):
 
 def embed_commits(collection, repo):
     commits = load_commits(repo)
-    print(f"DEBUG: load_commits returned {len(commits)} rows for repo='{repo}'")
     for commit in commits:
         sha, author, message, date, repo_name = commit
         embedding = embed_text(message)
