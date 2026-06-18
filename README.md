@@ -241,6 +241,27 @@ MAX_PAGES = 3    # pages per GitHub API endpoint (100 items/page)
 
 ---
 
+
+## Roadmap
+
+**Date-aware querying**
+The chat interface uses semantic search which finds meaning, not time. ChromaDB supports metadata filtering via its `where` clause — wiring this up would let users ask "what changed in Q3 2024" and get accurate results.
+
+**Parallel embedding**
+Embedding 300+ items runs sequentially — one Ollama call at a time. Using `ThreadPoolExecutor` on the embedding loop (same pattern used for PR comment fetching) would cut embedding time by 5-10x.
+
+**Confidence scoring on ADRs**
+ADRs currently have no signal about how strongly evidenced they are. A cluster backed by 8 detailed PRs with rich discussions should score higher confidence than one backed by 2 vague commits. Adding a confidence score per ADR would make the output more trustworthy.
+
+**Private repository support**
+Currently works on any public repo. Private repos require passing the token through to GitPython for local clone access — the architecture already supports this, it just needs wiring.
+
+**Docker Compose deployment**
+The system runs locally but has no one-command setup for other machines. A Docker Compose file wrapping Ollama, ChromaDB, and the Streamlit app would make it deployable anywhere.
+
+**Incremental updates**
+Re-collecting a repo fetches everything from scratch. Storing the last collection timestamp and only fetching new commits/PRs since then would make re-runs significantly faster for active repositories.
+
 ## Author
 
 Built by [Ajzal](https://github.com/Ajzal-me) — a local-first multi-agent system for engineering teams that want to preserve architectural knowledge without sending their codebase to external APIs.
