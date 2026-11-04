@@ -130,11 +130,13 @@ else:
                     "draft_adrs": [],
                     "final_adrs": [],
                     "current_cluster_index": 0,
-                    "errors": []
+                    "errors": [],
+                    "eval_contexts": []
                 })
                     
                     st.session_state.adrs = result['final_adrs']
                     st.session_state.topic = topic
+                    st.session_state.last_run_state = result 
                     progress.success(f"✅ Generated {len(result['final_adrs'])} ADRs")
                 
                 except Exception as e:

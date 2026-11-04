@@ -11,3 +11,4 @@ class ADRState(TypedDict):
     final_adrs: List[str]
     current_cluster_index: int
     errors: List[str]
+    eval_contexts: List[dict]

@@ -6,3 +6,4 @@ langgraph
 scikit-learn
 numpy
 streamlit
+langsmith

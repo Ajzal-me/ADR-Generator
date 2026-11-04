@@ -60,7 +60,16 @@ def reasoner(state: ADRState) -> ADRState:
 
     existing_adrs = state["draft_adrs"] or []
 
+    existing_contexts = state.get("eval_contexts") or []
+    context_chunks = [f"{pr['title']}. {pr['body'][:500]}" for pr in prs]
+    context_chunks += [f"{c['author']}: {c['text']}" for c in relevant_commits]
+
     return {
         "draft_adrs": existing_adrs + [adr_text],
+        "eval_contexts": existing_contexts + [{
+            "theme": theme,
+            "contexts": context_chunks,
+            "response": adr_body
+        }],
         "current_cluster_index": index + 1
     }

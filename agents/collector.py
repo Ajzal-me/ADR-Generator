@@ -1,6 +1,7 @@
 import chromadb
 import ollama
 from state import ADRState
+from langsmith import traceable
 
 def search(query, collection, n_results):
     query_embeddings = ollama.embeddings(
@@ -15,6 +16,7 @@ def search(query, collection, n_results):
     
     return results["metadatas"][0]
 
+@traceable(name="collector_agent",run_type="chain")
 def collector(state:ADRState )-> ADRState:
     topic = state["topic"]
     repo  = state["repo"]

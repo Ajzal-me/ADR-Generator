@@ -5,6 +5,9 @@ from agents.clusterer import clusterer
 from agents.reasoner import reasoner
 from agents.writer import writer
 
+from dotenv import load_dotenv
+load_dotenv(override=True)
+
 def should_continue(state:ADRState):
     current_idx = state['current_cluster_index']
     if current_idx < len(state["clusters"]):
@@ -48,6 +51,7 @@ def run_graph(repo, topic, n_results=15):
         "draft_adrs": [],
         "final_adrs": [],
         "current_cluster_index": 0,
-        "errors": []
+        "errors": [],
+        "eval_contexts": []
     })
     return result
