@@ -1,8 +1,9 @@
-from dotenv import load_dotenv
-load_dotenv(override=True)
-from langsmith import Client
 import os
 
+from dotenv import load_dotenv
+from langsmith import Client
+
+load_dotenv(override=True)
 c = Client()
 proj = c.read_project(project_name="adr-generator")
 print("Project ID:", proj.id)

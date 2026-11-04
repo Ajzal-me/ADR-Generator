@@ -1,9 +1,12 @@
 import sqlite3
+from typing import Any
 
-def get_connection():
+
+def get_connection() -> sqlite3.Connection:
     return sqlite3.connect("github_data.db")
 
-def create_tables():
+
+def create_tables() -> None:
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -57,63 +60,82 @@ def create_tables():
     conn.close()
     print("Tables created.")
 
-def save_data(repo,prs, commits, comments, issues):
+
+def save_data(
+    repo: str,
+    prs: list[dict[str, Any]],
+    commits: list[dict[str, Any]],
+    comments: list[dict[str, Any]],
+    issues: list[dict[str, Any]],
+) -> None:
     conn = get_connection()
     cursor = conn.cursor()
 
     for pr in prs:
-        cursor.execute("""
+        cursor.execute(
+            """
         INSERT OR REPLACE INTO pull_requests
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            pr["number"],
-            pr["title"],
-            pr.get("body") or "",
-            pr["state"],
-            pr["user"]["login"],
-            pr["created_at"],
-            pr.get("merged_at"),
-            repo 
-        ))
+        """,
+            (
+                pr["number"],
+                pr["title"],
+                pr.get("body") or "",
+                pr["state"],
+                pr["user"]["login"],
+                pr["created_at"],
+                pr.get("merged_at"),
+                repo,
+            ),
+        )
 
     for commit in commits:
-        cursor.execute("""
+        cursor.execute(
+            """
         INSERT OR REPLACE INTO commits
         VALUES (?, ?, ?, ?, ?)
-        """, (
-            commit["sha"],
-            commit["commit"]["author"]["name"],
-            commit["commit"]["message"],
-            commit["commit"]["author"]["date"],
-            repo
-        ))
+        """,
+            (
+                commit["sha"],
+                commit["commit"]["author"]["name"],
+                commit["commit"]["message"],
+                commit["commit"]["author"]["date"],
+                repo,
+            ),
+        )
 
     for comment in comments:
-        cursor.execute("""
+        cursor.execute(
+            """
         INSERT OR REPLACE INTO comments
         VALUES (?, ?, ?, ?, ?, ?)
-        """, (
-            comment["id"],
-            comment.get("pr_number"),
-            comment["user"]["login"],
-            comment["body"],
-            comment["created_at"],
-            repo 
-        ))
+        """,
+            (
+                comment["id"],
+                comment.get("pr_number"),
+                comment["user"]["login"],
+                comment["body"],
+                comment["created_at"],
+                repo,
+            ),
+        )
 
     for issue in issues:
-        cursor.execute("""
+        cursor.execute(
+            """
         INSERT OR REPLACE INTO issues
         VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (
-            issue["number"],
-            issue["title"],
-            issue.get("body") or "",
-            issue["state"],
-            issue["user"]["login"],
-            issue["created_at"],
-            repo 
-        ))
+        """,
+            (
+                issue["number"],
+                issue["title"],
+                issue.get("body") or "",
+                issue["state"],
+                issue["user"]["login"],
+                issue["created_at"],
+                repo,
+            ),
+        )
 
     conn.commit()
     conn.close()

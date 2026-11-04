@@ -1,1 +1,0 @@
-MAX_PAGES=3

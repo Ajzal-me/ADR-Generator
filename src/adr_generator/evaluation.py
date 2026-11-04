@@ -18,14 +18,20 @@ of the pipeline.
 """
 
 import os
-from ragas import evaluate, EvaluationDataset
-from ragas.metrics import Faithfulness, ResponseRelevancy
-from ragas.llms import LangchainLLMWrapper
-from ragas.embeddings import LangchainEmbeddingsWrapper
+from typing import cast
+
+import pandas as pd
 from langchain_ollama import ChatOllama, OllamaEmbeddings
+from ragas import EvaluationDataset, evaluate
+from ragas.dataset_schema import EvaluationResult
+from ragas.embeddings import LangchainEmbeddingsWrapper
+from ragas.llms import LangchainLLMWrapper
+from ragas.metrics import Faithfulness, ResponseRelevancy
+
+from .state import ADRState
 
 
-def build_ragas_dataset(state):
+def build_ragas_dataset(state: ADRState) -> EvaluationDataset:
     """
     Turn the ADRState returned by run_graph()/app.invoke() into a Ragas
     EvaluationDataset. Relies on `eval_contexts`, populated by
@@ -42,17 +48,23 @@ def build_ragas_dataset(state):
 
     samples = []
     for item in eval_contexts:
-        samples.append({
-            "user_input": item["theme"],
-            "retrieved_contexts": item["contexts"],
-            "response": item["response"],
-        })
+        samples.append(
+            {
+                "user_input": item["theme"],
+                "retrieved_contexts": item["contexts"],
+                "response": item["response"],
+            }
+        )
 
     return EvaluationDataset.from_list(samples)
 
 
-def run_ragas_evaluation(state, judge_model="mistral", embed_model="nomic-embed-text",
-                          output_csv="adr_output/ragas_eval_results.csv"):
+def run_ragas_evaluation(
+    state: ADRState,
+    judge_model: str = "mistral",
+    embed_model: str = "nomic-embed-text",
+    output_csv: str = "adr_output/ragas_eval_results.csv",
+) -> pd.DataFrame:
     """
     Evaluate every ADR in `state` and return a pandas DataFrame of
     per-ADR scores. Also writes a CSV next to the generated ADR files.
@@ -64,11 +76,14 @@ def run_ragas_evaluation(state, judge_model="mistral", embed_model="nomic-embed-
 
     metrics = [Faithfulness(), ResponseRelevancy()]
 
-    result = evaluate(
-        dataset=dataset,
-        metrics=metrics,
-        llm=llm,
-        embeddings=embeddings,
+    result = cast(
+        EvaluationResult,
+        evaluate(
+            dataset=dataset,
+            metrics=metrics,
+            llm=llm,
+            embeddings=embeddings,
+        ),
     )
 
     df = result.to_pandas()
@@ -92,7 +107,7 @@ if __name__ == "__main__":
     # Edit REPO / TOPIC below to match a repo you've already run
     # "Collect Data" for (via ui.py or embedder.py) — this script only
     # runs the graph + evaluation, it doesn't collect/embed GitHub data.
-    from graph import run_graph
+    from .graph import run_graph
 
     REPO = "pallets/flask"
     TOPIC = "error handling"

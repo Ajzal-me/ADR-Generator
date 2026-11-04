@@ -80,16 +80,16 @@ collector → clusterer → reasoner ↻ (loops per cluster) → writer → END
 
 ```python
 class ADRState(TypedDict):
-    repo: str                      # owner/repo identifier
-    topic: str                     # user's query topic
-    n_results: int                 # how many PRs to retrieve
-    relevant_prs: List[dict]       # collector output
-    relevant_commits: List[dict]   # collector output
-    clusters: List[dict]           # clusterer output
-    draft_adrs: List[str]          # reasoner output (accumulates)
-    final_adrs: List[str]          # writer output (file paths)
-    current_cluster_index: int     # loop tracker
-    errors: List[str]              # error log
+    repo: str  # owner/repo identifier
+    topic: str  # user's query topic
+    n_results: int  # how many PRs to retrieve
+    relevant_prs: List[dict]  # collector output
+    relevant_commits: List[dict]  # collector output
+    clusters: List[dict]  # clusterer output
+    draft_adrs: List[str]  # reasoner output (accumulates)
+    final_adrs: List[str]  # writer output (file paths)
+    current_cluster_index: int  # loop tracker
+    errors: List[str]  # error log
 ```
 
 ### File structure
@@ -225,9 +225,9 @@ Use the "Ask Questions" tab to query the repository conversationally. The system
 
 ```python
 # config.py
-MAX_PAGES = 3    # pages per GitHub API endpoint (100 items/page)
-                 # MAX_PAGES=3 → up to 300 commits, 300 PRs
-                 # increase for larger repos, decrease for faster collection
+MAX_PAGES = 3  # pages per GitHub API endpoint (100 items/page)
+# MAX_PAGES=3 → up to 300 commits, 300 PRs
+# increase for larger repos, decrease for faster collection
 ```
 
 ---
