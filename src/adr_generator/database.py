@@ -1,68 +1,74 @@
+import logging
 import sqlite3
+from contextlib import closing
 from typing import Any
 
 from .settings import get_settings
 
+logger = logging.getLogger(__name__)
+
 
 def get_connection() -> sqlite3.Connection:
-    settings = get_settings()
-    settings.data_dir.mkdir(parents=True, exist_ok=True)
-    return sqlite3.connect(settings.db_path)
+    path = get_settings().db_path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return sqlite3.connect(path)
 
 
 def create_tables() -> None:
-    conn = get_connection()
-    cursor = conn.cursor()
+    # NOTE: keep the column order — embedder.py unpacks rows by position.
+    with closing(get_connection()) as conn, conn:
+        conn.execute("""
+        CREATE TABLE IF NOT EXISTS commits (
+            sha TEXT,
+            author TEXT,
+            message TEXT,
+            date TEXT,
+            repo TEXT,
+            PRIMARY KEY (repo, sha)
+        )
+        """)
+        conn.execute("""
+        CREATE TABLE IF NOT EXISTS pull_requests (
+            number INTEGER,
+            title TEXT,
+            body TEXT,
+            state TEXT,
+            author TEXT,
+            created_at TEXT,
+            merged_at TEXT,
+            repo TEXT,
+            PRIMARY KEY (repo, number)
+        )
+        """)
+        conn.execute("""
+        CREATE TABLE IF NOT EXISTS comments (
+            id INTEGER,
+            pr_number INTEGER,
+            author TEXT,
+            body TEXT,
+            created_at TEXT,
+            repo TEXT,
+            PRIMARY KEY (repo, id)
+        )
+        """)
+        conn.execute("""
+        CREATE TABLE IF NOT EXISTS issues (
+            number INTEGER,
+            title TEXT,
+            body TEXT,
+            state TEXT,
+            author TEXT,
+            created_at TEXT,
+            repo TEXT,
+            PRIMARY KEY (repo, number)
+        )
+        """)
+    logger.info("Tables ready")
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS commits (
-        sha TEXT PRIMARY KEY,
-        author TEXT,
-        message TEXT,
-        date TEXT,
-        repo TEXT
-    )
-    """)
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS pull_requests (
-        id INTEGER PRIMARY KEY,
-        title TEXT,
-        body TEXT,
-        state TEXT,
-        author TEXT,
-        created_at TEXT,
-        merged_at TEXT,
-        repo TEXT
-    )
-    """)
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS comments (
-        id INTEGER PRIMARY KEY,
-        pr_number INTEGER,
-        author TEXT,
-        body TEXT,
-        created_at TEXT,
-        repo TEXT
-    )
-    """)
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS issues (
-        id INTEGER PRIMARY KEY,
-        title TEXT,
-        body TEXT,
-        state TEXT,
-        author TEXT,
-        created_at TEXT,
-        repo TEXT
-    )
-    """)
-
-    conn.commit()
-    conn.close()
-    print("Tables created.")
+def _login(user: dict[str, Any] | None) -> str:
+    """GitHub sends user=null for deleted accounts."""
+    return (user or {}).get("login") or "ghost"
 
 
 def save_data(
@@ -72,75 +78,79 @@ def save_data(
     comments: list[dict[str, Any]],
     issues: list[dict[str, Any]],
 ) -> None:
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    for pr in prs:
-        cursor.execute(
+    with closing(get_connection()) as conn, conn:  # `conn` as a context manager = one transaction
+        conn.executemany(
             """
-        INSERT OR REPLACE INTO pull_requests
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-            (
-                pr["number"],
-                pr["title"],
-                pr.get("body") or "",
-                pr["state"],
-                pr["user"]["login"],
-                pr["created_at"],
-                pr.get("merged_at"),
-                repo,
-            ),
+            INSERT OR REPLACE INTO pull_requests
+                (number, title, body, state, author, created_at, merged_at, repo)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                (
+                    pr["number"],
+                    pr["title"],
+                    pr.get("body") or "",
+                    pr["state"],
+                    _login(pr.get("user")),
+                    pr["created_at"],
+                    pr.get("merged_at"),
+                    repo,
+                )
+                for pr in prs
+            ],
         )
-
-    for commit in commits:
-        cursor.execute(
+        conn.executemany(
             """
-        INSERT OR REPLACE INTO commits
-        VALUES (?, ?, ?, ?, ?)
-        """,
-            (
-                commit["sha"],
-                commit["commit"]["author"]["name"],
-                commit["commit"]["message"],
-                commit["commit"]["author"]["date"],
-                repo,
-            ),
+            INSERT OR REPLACE INTO commits (sha, author, message, date, repo)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            [
+                (
+                    c["sha"],
+                    (c["commit"].get("author") or {}).get("name") or "unknown",
+                    c["commit"]["message"],
+                    (c["commit"].get("author") or {}).get("date") or "",
+                    repo,
+                )
+                for c in commits
+            ],
         )
-
-    for comment in comments:
-        cursor.execute(
+        conn.executemany(
             """
-        INSERT OR REPLACE INTO comments
-        VALUES (?, ?, ?, ?, ?, ?)
-        """,
-            (
-                comment["id"],
-                comment.get("pr_number"),
-                comment["user"]["login"],
-                comment["body"],
-                comment["created_at"],
-                repo,
-            ),
+            INSERT OR REPLACE INTO comments (id, pr_number, author, body, created_at, repo)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            [
+                (
+                    c["id"],
+                    c.get("pr_number"),
+                    _login(c.get("user")),
+                    c.get("body") or "",
+                    c["created_at"],
+                    repo,
+                )
+                for c in comments
+            ],
         )
-
-    for issue in issues:
-        cursor.execute(
+        conn.executemany(
             """
-        INSERT OR REPLACE INTO issues
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        """,
-            (
-                issue["number"],
-                issue["title"],
-                issue.get("body") or "",
-                issue["state"],
-                issue["user"]["login"],
-                issue["created_at"],
-                repo,
-            ),
+            INSERT OR REPLACE INTO issues (number, title, body, state, author, created_at, repo)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                (
+                    i["number"],
+                    i["title"],
+                    i.get("body") or "",
+                    i["state"],
+                    _login(i.get("user")),
+                    i["created_at"],
+                    repo,
+                )
+                for i in issues
+            ],
         )
-
-    conn.commit()
-    conn.close()
-    print("Data saved.")
+    logger.info(
+        "Saved %s: %d PRs, %d commits, %d comments, %d issues",
+        repo, len(prs), len(commits), len(comments), len(issues),
+    )
