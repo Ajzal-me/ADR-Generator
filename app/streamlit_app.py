@@ -1,5 +1,6 @@
 import os
 import shutil
+from urllib.parse import urlparse
 
 import chromadb
 import ollama
@@ -10,8 +11,6 @@ from adr_generator.database import create_tables, save_data
 from adr_generator.embedder import run_embedder
 from adr_generator.github_collector import load_data
 from adr_generator.graph import app
-
-from src.adr_generator.repo import parse_repo_url, InvalidRepoURL
 
 st.set_page_config(page_title="ADR Generator", layout="wide")
 st.title("ADR Generator")
@@ -42,13 +41,8 @@ with st.sidebar:
             st.error("Please enter a github token")
         else:
             try:
-                try:
-                    ref = parse_repo_url(repo_url)
-                except InvalidRepoURL as e:
-                    st.error(str(e))
-                    st.stop()
-                full_repo = ref.full
-                
+                parts = urlparse(repo_url).path.strip("/").split("/")
+                full_repo = f"{parts[0]}/{parts[1]}"
 
                 with st.spinner(f"Fetching data from {full_repo}..."):
                     data = load_data(repo_url, token)

@@ -1,11 +1,10 @@
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
+from urllib.parse import urlparse
 
 import requests
 from dotenv import load_dotenv
-
-from src.adr_generator.repo import InvalidRepoURL, parse_repo_url
 
 from .config import MAX_PAGES
 
@@ -62,10 +61,8 @@ def paginate(
 
 def load_data(url: str, token: str | None) -> dict[str, list[dict[str, Any]]]:
 
-    
-    ref = parse_repo_url(url)
-    
-    owner,repo = ref.owner,ref.name
+    parts = urlparse(url).path.strip("/").split("/")
+    owner, repo = parts[0], parts[1]
 
     headers = {}
     if token:
