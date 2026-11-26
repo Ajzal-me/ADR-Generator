@@ -1,16 +1,10 @@
-import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
 import requests
-from dotenv import load_dotenv
 
-from src.adr_generator.repo import InvalidRepoURL, parse_repo_url
-
-from .config import MAX_PAGES
-
-load_dotenv()
-token: str | None = os.getenv("TOKEN")
+from .repo import parse_repo_url
+from .settings import get_settings
 
 
 def get_comments_for_pr(
@@ -42,8 +36,11 @@ def get_all_pr_comments(
 
 
 def paginate(
-    url: str, headers: dict[str, str], max_pages: int = MAX_PAGES
+    url: str, headers: dict[str, str], max_pages: int | None = None
 ) -> list[dict[str, Any]]:
+    if max_pages is None:
+        max_pages = get_settings().max_pages
+
     results: list[dict[str, Any]] = []
     page = 1
     while True:
@@ -62,10 +59,8 @@ def paginate(
 
 def load_data(url: str, token: str | None) -> dict[str, list[dict[str, Any]]]:
 
-    
     ref = parse_repo_url(url)
-    
-    owner,repo = ref.owner,ref.name
+    owner, repo = ref.owner, ref.name
 
     headers = {}
     if token:

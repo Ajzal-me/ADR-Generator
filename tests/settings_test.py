@@ -19,12 +19,21 @@ def test_env_overrides(tmp_path):
         {
             "ADR_DATA_DIR": str(tmp_path),
             "ADR_LLM_MODEL": "llama3",
+            "ADR_EMBED_MODEL": "embed-test",
             "ADR_MAX_PAGES": "5",
+            "ADR_REPO_URL": "https://github.com/pallets/flask",
         }
     )
     assert s.data_dir == tmp_path
     assert s.llm_model == "llama3"
+    assert s.embed_model == "embed-test"
     assert s.max_pages == 5
+    assert s.repo_url == "https://github.com/pallets/flask"
+
+
+def test_legacy_repo_url_fallback():
+    s = load_settings({"REPO_URL": "https://github.com/pallets/flask"})
+    assert s.repo_url == "https://github.com/pallets/flask"
 
 
 def test_derived_paths(tmp_path):

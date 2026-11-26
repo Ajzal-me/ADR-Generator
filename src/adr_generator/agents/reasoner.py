@@ -1,6 +1,7 @@
 import chromadb
 import ollama
 
+from ..settings import get_settings
 from ..state import ADRState
 from .collector import search  # reuse search function you already wrote
 
@@ -13,7 +14,7 @@ def reasoner(state: ADRState) -> ADRState:
     prs = cluster["prs"]
 
     # get commits relevant to THIS cluster's theme
-    client = chromadb.PersistentClient(path="chroma_store")
+    client = chromadb.PersistentClient(path=str(get_settings().chroma_path))
     commits_col = client.get_or_create_collection("commits")
     relevant_commits = search(theme, commits_col, n_results=5)
 
@@ -30,7 +31,7 @@ def reasoner(state: ADRState) -> ADRState:
         commit_text += f"Message: {commit['text']}\n\n"
 
     response = ollama.chat(
-        model="mistral",
+        model=get_settings().llm_model,
         messages=[
             {
                 "role": "user",

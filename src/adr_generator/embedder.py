@@ -4,6 +4,7 @@ import chromadb
 import ollama
 
 from .database import get_connection
+from .settings import get_settings
 
 
 def load_commits(repo: str) -> list[tuple[Any, ...]]:
@@ -44,7 +45,7 @@ def load_issues(repo: str) -> list[tuple[Any, ...]]:
 
 def embed_text(text: str, max_chars: int = 2000) -> list[float]:
     text = text[:max_chars]
-    response = ollama.embeddings(model="nomic-embed-text", prompt=text)
+    response = ollama.embeddings(model=get_settings().embed_model, prompt=text)
     return cast(list[float], response["embedding"])
 
 
@@ -143,7 +144,8 @@ def embed_issues(collection: Any, repo: str) -> None:
 
 
 def run_embedder(repo: str) -> None:
-    client = chromadb.PersistentClient(path="chroma_store")
+    settings = get_settings()
+    client = chromadb.PersistentClient(path=str(settings.chroma_path))
     commits_col = client.get_or_create_collection("commits")
     prs_col = client.get_or_create_collection("pull_requests")
     issues_col = client.get_or_create_collection("issues")

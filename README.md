@@ -99,7 +99,7 @@ ADR-Generator/
 ├── ui.py                  # Streamlit web interface
 ├── graph.py               # LangGraph graph definition and compilation
 ├── state.py               # Shared ADRState TypedDict
-├── config.py              # MAX_PAGES and other settings
+├── src/adr_generator/settings.py # Environment-backed application settings
 ├── database.py            # SQLite schema and save functions
 ├── embedder.py            # ChromaDB embedding pipeline
 ├── github_collector.py    # GitHub API data collection with parallel comment fetch
@@ -202,7 +202,7 @@ Open `http://localhost:8501` in your browser.
 ## Usage
 
 **Step 1 — Collect**
-Enter any public GitHub repository URL and your GitHub token in the sidebar. Click "Collect Data". The system fetches commits, PRs, comments and issues (limited to `MAX_PAGES` pages per endpoint, configurable in `config.py`).
+Enter any public GitHub repository URL and your GitHub token in the sidebar. Click "Collect Data". The system fetches commits, PRs, comments and issues (limited by `ADR_MAX_PAGES` pages per endpoint).
 
 **Step 2 — Generate ADRs**
 Enter a topic in the main area — for example "authentication", "performance", "error handling", "caching". Adjust the PR retrieval count with the slider (5-25). Click "Generate ADRs".
@@ -223,12 +223,16 @@ Use the "Ask Questions" tab to query the repository conversationally. The system
 
 ## Configuration
 
-```python
-# config.py
-MAX_PAGES = 3  # pages per GitHub API endpoint (100 items/page)
-# MAX_PAGES=3 → up to 300 commits, 300 PRs
-# increase for larger repos, decrease for faster collection
+```dotenv
+ADR_DATA_DIR=data
+ADR_LLM_MODEL=mistral
+ADR_EMBED_MODEL=nomic-embed-text
+ADR_MAX_PAGES=3
+# Optional repository URL for the standalone search script:
+ADR_REPO_URL=https://github.com/owner/repo
 ```
+
+`ADR_DATA_DIR` contains the SQLite database, ChromaDB index, and generated ADR files. `ADR_REPO_URL` takes precedence over the legacy `REPO_URL` variable.
 
 ---
 
@@ -236,7 +240,7 @@ MAX_PAGES = 3  # pages per GitHub API endpoint (100 items/page)
 
 - Date-based queries ("what changed in June 2024") use semantic search, not date filtering. ChromaDB supports metadata filtering via `where` clause — not yet wired into the chat interface.
 - Local models (mistral:7b) produce good but not GPT-4 quality prose. The architecture and decision extraction is sound; the writing style reflects the model's capability.
-- Very large repos (10,000+ commits) will take significant time to embed. Use `MAX_PAGES` to limit collection scope.
+- Very large repos (10,000+ commits) will take significant time to embed. Use `ADR_MAX_PAGES` to limit collection scope.
 - ChromaDB file locking on Windows can cause issues if Streamlit is restarted mid-session. If this occurs, close the browser tab, stop Streamlit, and restart.
 
 ---

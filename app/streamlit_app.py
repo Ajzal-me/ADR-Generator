@@ -10,15 +10,17 @@ from adr_generator.database import create_tables, save_data
 from adr_generator.embedder import run_embedder
 from adr_generator.github_collector import load_data
 from adr_generator.graph import app
+from adr_generator.repo import InvalidRepoURL, parse_repo_url
+from adr_generator.settings import get_settings
 
-from src.adr_generator.repo import parse_repo_url, InvalidRepoURL
+settings = get_settings()
 
 st.set_page_config(page_title="ADR Generator", layout="wide")
 st.title("ADR Generator")
 st.caption("Automatically generate Architectural Decision Records from any GitHub repository")
 
 try:
-    ollama.embeddings(model="nomic-embed-text", prompt="test")
+    ollama.embeddings(model=settings.embed_model, prompt="test")
 except Exception:
     st.error("Ollama is not running. Please start Ollama and refresh.")
     st.stop()
@@ -48,7 +50,6 @@ with st.sidebar:
                     st.error(str(e))
                     st.stop()
                 full_repo = ref.full
-                
 
                 with st.spinner(f"Fetching data from {full_repo}..."):
                     data = load_data(repo_url, token)
@@ -72,9 +73,9 @@ with st.sidebar:
                         gc.collect()
                         time.sleep(1)
 
-                        if os.path.exists("chroma_store"):
+                        if settings.chroma_path.exists():
                             try:
-                                shutil.rmtree("chroma_store")
+                                shutil.rmtree(settings.chroma_path)
                             except Exception:
                                 st.warning("Could not clear old ChromaDB — using existing data")  # now safe to delete
 
@@ -113,8 +114,8 @@ else:
             if not topic:
                 st.error("Enter a topic")
             else:
-                if os.path.exists("adr_output"):
-                    shutil.rmtree("adr_output")
+                if settings.output_dir.exists():
+                    shutil.rmtree(settings.output_dir)
 
                 progress = st.empty()
 
@@ -194,7 +195,7 @@ else:
             with st.chat_message("assistant"):
                 with st.spinner("Searching repository..."):
                     try:
-                        client = chromadb.PersistentClient(path="chroma_store")
+                        client = chromadb.PersistentClient(path=str(settings.chroma_path))
                         prs_col = client.get_or_create_collection("pull_requests")
                         commits_col = client.get_or_create_collection("commits")
 
@@ -211,7 +212,7 @@ else:
                             context += f"- {c['text']} by {c['author']} ({c.get('date', '')[:10]})\n"
 
                         response = ollama.chat(
-                            model="mistral",
+                            model=settings.llm_model,
                             messages=[
                                 {
                                     "role": "user",

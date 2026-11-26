@@ -1,9 +1,13 @@
 import sqlite3
 from typing import Any
 
+from .settings import get_settings
+
 
 def get_connection() -> sqlite3.Connection:
-    return sqlite3.connect("github_data.db")
+    settings = get_settings()
+    settings.data_dir.mkdir(parents=True, exist_ok=True)
+    return sqlite3.connect(settings.db_path)
 
 
 def create_tables() -> None:

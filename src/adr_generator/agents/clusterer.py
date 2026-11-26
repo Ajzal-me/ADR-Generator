@@ -4,6 +4,7 @@ import numpy as np
 import ollama
 from sklearn.cluster import KMeans
 
+from ..settings import get_settings
 from ..state import ADRState
 
 
@@ -13,13 +14,14 @@ def get_cluster_name(prs_in_cluster: list[dict[str, Any]]) -> str:
     titles_text = "\n".join(pr_titles)
 
     response = ollama.chat(
-        model="mistral",
+        model=get_settings().llm_model,
         messages=[
             {
                 "role": "user",
                 "content": f"""
                     Here are some pull request titles that belong to the same group:{titles_text}
-                    Give this group a short theme name (3-5 words maximum).Respond with ONLY the theme name, nothing else.
+                    Give this group a short theme name (3-5 words maximum).
+                    Respond with ONLY the theme name, nothing else.
                 """,
             }
         ],
@@ -37,7 +39,7 @@ def clusterer(state: ADRState) -> ADRState:
 
     vectors = []
     for pr in relevant_prs:
-        embeddings = ollama.embeddings(model="nomic-embed-text", prompt=pr["title"])["embedding"]
+        embeddings = ollama.embeddings(model=get_settings().embed_model, prompt=pr["title"])["embedding"]
         vectors.append(embeddings)
 
     k = min(max(2, len(relevant_prs) // 4), len(relevant_prs))

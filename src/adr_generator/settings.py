@@ -13,6 +13,7 @@ class Settings:
     llm_model: str
     embed_model: str
     max_pages: int
+    repo_url: str
 
     @property
     def db_path(self) -> Path:
@@ -48,6 +49,7 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         llm_model=env.get("ADR_LLM_MODEL", "mistral"),
         embed_model=env.get("ADR_EMBED_MODEL", "nomic-embed-text"),
         max_pages=_positive_int(env, "ADR_MAX_PAGES", 3),
+        repo_url=env.get("ADR_REPO_URL", env.get("REPO_URL", "")),
     )
 
 

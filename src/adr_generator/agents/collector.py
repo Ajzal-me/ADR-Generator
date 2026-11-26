@@ -4,11 +4,12 @@ import chromadb
 import ollama
 from langsmith import traceable
 
+from ..settings import get_settings
 from ..state import ADRState
 
 
 def search(query: str, collection: Any, n_results: int) -> list[dict[str, Any]]:
-    query_embeddings = ollama.embeddings(model="nomic-embed-text", prompt=query)["embedding"]
+    query_embeddings = ollama.embeddings(model=get_settings().embed_model, prompt=query)["embedding"]
 
     results = collection.query(query_embeddings=[query_embeddings], n_results=n_results)
 
@@ -20,7 +21,7 @@ def collector(state: ADRState) -> ADRState:
     topic = state["topic"]
     n_results = state["n_results"]
 
-    client = chromadb.PersistentClient(path="chroma_store")
+    client = chromadb.PersistentClient(path=str(get_settings().chroma_path))
     prs_col = client.get_or_create_collection("pull_requests")
     commits_col = client.get_or_create_collection("commits")
 

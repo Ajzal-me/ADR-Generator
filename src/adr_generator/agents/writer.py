@@ -1,13 +1,14 @@
-import os
 import re
 
+from ..settings import get_settings
 from ..state import ADRState
 
 
 def writer(state: ADRState) -> ADRState:
     draft_adrs = state["draft_adrs"]
 
-    os.makedirs("adr_output", exist_ok=True)
+    output_dir = get_settings().output_dir
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     final_adrs = []
 
@@ -20,12 +21,12 @@ def writer(state: ADRState) -> ADRState:
         # create clean filename — lowercase, spaces to dashes
         safe_name = theme.lower().replace(" ", "-")
         safe_name = re.sub(r'[<>:"/\\|?*]', "", safe_name)
-        filename = f"adr_output/{i + 1:03d}-{safe_name}.md"
+        filename = output_dir / f"{i + 1:03d}-{safe_name}.md"
 
-        with open(filename, "w", encoding="utf-8") as f:
+        with filename.open("w", encoding="utf-8") as f:
             f.write(adr_text)
 
-        final_adrs.append(filename)
+        final_adrs.append(str(filename))
         print(f"  Saved: {filename}")
 
     return {"final_adrs": final_adrs}

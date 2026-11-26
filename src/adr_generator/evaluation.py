@@ -17,7 +17,7 @@ Ragas via langchain-ollama, so evaluation runs fully offline like the rest
 of the pipeline.
 """
 
-import os
+from pathlib import Path
 from typing import cast
 
 import pandas as pd
@@ -28,6 +28,7 @@ from ragas.embeddings import LangchainEmbeddingsWrapper
 from ragas.llms import LangchainLLMWrapper
 from ragas.metrics import Faithfulness, ResponseRelevancy
 
+from .settings import get_settings
 from .state import ADRState
 
 
@@ -61,18 +62,19 @@ def build_ragas_dataset(state: ADRState) -> EvaluationDataset:
 
 def run_ragas_evaluation(
     state: ADRState,
-    judge_model: str = "mistral",
-    embed_model: str = "nomic-embed-text",
-    output_csv: str = "adr_output/ragas_eval_results.csv",
+    judge_model: str | None = None,
+    embed_model: str | None = None,
+    output_csv: str | Path | None = None,
 ) -> pd.DataFrame:
     """
     Evaluate every ADR in `state` and return a pandas DataFrame of
     per-ADR scores. Also writes a CSV next to the generated ADR files.
     """
+    settings = get_settings()
     dataset = build_ragas_dataset(state)
 
-    llm = LangchainLLMWrapper(ChatOllama(model=judge_model))
-    embeddings = LangchainEmbeddingsWrapper(OllamaEmbeddings(model=embed_model))
+    llm = LangchainLLMWrapper(ChatOllama(model=judge_model or settings.llm_model))
+    embeddings = LangchainEmbeddingsWrapper(OllamaEmbeddings(model=embed_model or settings.embed_model))
 
     metrics = [Faithfulness(), ResponseRelevancy()]
 
@@ -88,10 +90,17 @@ def run_ragas_evaluation(
 
     df = result.to_pandas()
 
-    if output_csv:
-        os.makedirs(os.path.dirname(output_csv), exist_ok=True)
-        df.to_csv(output_csv, index=False)
-        print(f"Saved Ragas results to {output_csv}")
+    if output_csv is None:
+        output_path = settings.output_dir / "ragas_eval_results.csv"
+    elif output_csv:
+        output_path = Path(output_csv)
+    else:
+        output_path = None
+
+    if output_path is not None:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        df.to_csv(output_path, index=False)
+        print(f"Saved Ragas results to {output_path}")
 
     cols = [c for c in ["user_input", "faithfulness", "answer_relevancy"] if c in df.columns]
     print(df[cols] if cols else df)
